@@ -15,14 +15,16 @@
 
 #include "ui.h"
 
-float rotation = 0.0;
-float alpha    = 1.0;
-float grid     = 0.2;
+float cameraRotationZ = 0.0;
+float cameraRotationX = 0.0;
+glm::vec3 cameraPosition = glm::vec3(0.0, -5.0, 5.0);
 
 bool drawXPlane = true;
 bool drawYPlane = true;
 bool drawZPlane = true;
 bool drawAxis   = true;
+
+float grid = 0.2;
 
 GLfloat vertices[18*20*20];
 GLuint vertex_buffer;
@@ -32,6 +34,7 @@ glm::mat3 field_transform = glm::mat3(
 	0.0, 1.0, 0.0,
 	0.0, 0.0, 1.0
 );
+float alpha    = 1.0;
 
 GLint uniform_field_transform;
 GLint uniform_camera_transform;
@@ -40,55 +43,43 @@ GLint uniform_alpha;
 const GLint* shader;
 
 void reset() {
-	int idx = 0;
-	for ( int i = -10; i < 10; i += 1 ) {
-		for ( int j = -10; j < 10; j += 1 ) {
-			vertices[3*idx+0] = i*grid;
-			vertices[3*idx+1] = i % 2 == 0 ? j*grid : (-j-1)*grid;
-			vertices[3*idx+2] = 0.0;
-			idx++;
-		}
-	}
-	for ( int j = -10; j < 10; j += 1 ) {
-		for ( int i = -10; i < 10; i += 1 ) {
-			vertices[3*idx+0] = j % 2 == 0 ? (-i-1)*grid : i*grid;
-			vertices[3*idx+1] = j*grid;
-			vertices[3*idx+2] = 0.0;
-			idx++;
-		}
-	}
+	int idxZ = 0;
+	int idxX = 2*20*20;
+	int idxY = 4*20*20;
 
 	for ( int i = -10; i < 10; i += 1 ) {
 		for ( int j = -10; j < 10; j += 1 ) {
-			vertices[3*idx+0] = i*grid;
-			vertices[3*idx+1] = 0.0;
-			vertices[3*idx+2] = i % 2 == 0 ? j*grid : (-j-1)*grid;
-			idx++;
-		}
-	}
-	for ( int j = -10; j < 10; j += 1 ) {
-		for ( int i = -10; i < 10; i += 1 ) {
-			vertices[3*idx+0] = j % 2 == 0 ? (-i-1)*grid : i*grid;
-			vertices[3*idx+1] = 0.0;
-			vertices[3*idx+2] = j*grid;
-			idx++;
+			vertices[3*idxZ+0] = i*grid;
+			vertices[3*idxZ+1] = i % 2 == 0 ? j*grid : (-j-1)*grid;
+			vertices[3*idxZ+2] = 0.0;
+
+			vertices[3*idxY+0] = i*grid;
+			vertices[3*idxY+1] = 0.0;
+			vertices[3*idxY+2] = i % 2 == 0 ? j*grid : (-j-1)*grid;
+
+			vertices[3*idxX+0] = 0.0;
+			vertices[3*idxX+1] = i*grid;
+			vertices[3*idxX+2] = i % 2 == 0 ? j*grid : (-j-1)*grid;
+
+			idxZ++; idxY++; idxX++;
 		}
 	}
 
-	for ( int i = -10; i < 10; i += 1 ) {
-		for ( int j = -10; j < 10; j += 1 ) {
-			vertices[3*idx+0] = 0.0;
-			vertices[3*idx+1] = i*grid;
-			vertices[3*idx+2] = i % 2 == 0 ? j*grid : (-j-1)*grid;
-			idx++;
-		}
-	}
 	for ( int j = -10; j < 10; j += 1 ) {
 		for ( int i = -10; i < 10; i += 1 ) {
-			vertices[3*idx+0] = 0.0;
-			vertices[3*idx+1] = j % 2 == 0 ? (-i-1)*grid : i*grid;
-			vertices[3*idx+2] = j*grid;
-			idx++;
+			vertices[3*idxZ+0] = j % 2 == 0 ? (-i-1)*grid : i*grid;
+			vertices[3*idxZ+1] = j*grid;
+			vertices[3*idxZ+2] = 0.0;
+
+			vertices[3*idxY+0] = j % 2 == 0 ? (-i-1)*grid : i*grid;
+			vertices[3*idxY+1] = 0.0;
+			vertices[3*idxY+2] = j*grid;
+
+			vertices[3*idxX+0] = 0.0;
+			vertices[3*idxX+1] = j % 2 == 0 ? (-i-1)*grid : i*grid;
+			vertices[3*idxX+2] = j*grid;
+
+			idxZ++; idxY++; idxX++;
 		}
 	}
 }
@@ -101,7 +92,9 @@ void drawUI() {
 	ImGui::SetNextWindowSize(ImVec2(400, 200), ImGuiSetCond_FirstUseEver);
 	ImGui::Begin("View");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	ImGui::SliderFloat("rotation", &rotation, 0.0, 2*M_PI);
+	ImGui::SliderFloat("rotationZ", &cameraRotationZ, -M_PI, M_PI);
+	ImGui::SliderFloat("rotationX", &cameraRotationX, -M_PI, M_PI);
+	ImGui::SliderFloat3("position", (float*)&cameraPosition, -10.0, 10.0);
 	if ( ImGui::SliderFloat("grid", &grid, 0.01, 1.0) ) {
 		reset();
 	}
@@ -116,9 +109,9 @@ void drawUI() {
 	ImGui::End();
 
 	ImGui::Begin("Transformation");
-	ImGui::SliderFloat3("row1", (float*)&(field_transform[0]), -2.0f, 2.0f);
-	ImGui::SliderFloat3("row2", (float*)&(field_transform[1]), -2.0f, 2.0f);
-	ImGui::SliderFloat3("row3", (float*)&(field_transform[2]), -2.0f, 2.0f);
+	ImGui::DragFloat3("row1", (float*)&(field_transform[0]), 0.1f, -2.0f, 2.0f);
+	ImGui::DragFloat3("row2", (float*)&(field_transform[1]), 0.1f, -2.0f, 2.0f);
+	ImGui::DragFloat3("row3", (float*)&(field_transform[2]), 0.1f, -2.0f, 2.0f);
 	ImGui::Spacing();
 	ImGui::SliderFloat("alpha", &alpha, 0.0, 1.0);
 	ImGui::End();
@@ -135,8 +128,9 @@ void display() {
 
 	glUseProgram(*shader);
 
-	glm::mat4 model = glm::rotate(glm::mat4(1.0f), rotation, glm::vec3(0.0f, 0.0f, 1.0f));
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0, -5.0, 5.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
+	glm::mat4 model = glm::rotate(glm::mat4(1.0f), cameraRotationZ, glm::vec3(0.0f, 0.0f, 1.0f))
+	                * glm::rotate(glm::mat4(1.0f), cameraRotationX, glm::vec3(1.0f, 0.0f, 0.0f));
+	glm::mat4 view = glm::lookAt(cameraPosition, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
 	glm::mat4 projection = glm::perspective(45.0f, 1.0f * 640 / 480, 0.0f, 10.0f);
 	glm::mat4 camera_transform = projection * view * model;
 
