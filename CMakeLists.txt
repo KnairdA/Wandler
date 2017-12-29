@@ -13,6 +13,7 @@ include_directories(
 add_executable(
 	wandler
 		src/wandler.cc
+		src/camera.cc
 		src/dep/imgui/imgui.cpp
 		src/dep/imgui/imgui_draw.cpp
 		src/dep/imgui_glut/imgui_impl_glut.cpp

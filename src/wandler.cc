@@ -6,19 +6,15 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <tuple>
-#include <cmath>
-#include <vector>
-#include <thread>
-
 #include "dep/imgui/imgui.h"
 #include "dep/imgui_glut/imgui_impl_glut.h"
 
-#include "ui.h"
+#include <vector>
 
-float cameraRotationZ = 0.0;
-float cameraRotationX = 0.0;
-glm::vec3 cameraPosition = glm::vec3(0.0, -5.0, 5.0);
+#include "ui.h"
+#include "camera.h"
+
+Camera camera;
 
 bool drawXPlane = true;
 bool drawYPlane = true;
@@ -38,7 +34,6 @@ glm::mat3 field_transform = glm::mat3(
 float alpha    = 1.0;
 
 GLint uniform_field_transform;
-GLint uniform_camera_transform;
 GLint uniform_alpha;
 
 const GLint* shader;
@@ -93,9 +88,7 @@ void drawUI() {
 	ImGui::SetNextWindowSize(ImVec2(400, 200), ImGuiSetCond_FirstUseEver);
 	ImGui::Begin("View");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	ImGui::SliderFloat("rotationZ", &cameraRotationZ, -M_PI, M_PI);
-	ImGui::SliderFloat("rotationX", &cameraRotationX, -M_PI, M_PI);
-	ImGui::SliderFloat3("position", (float*)&cameraPosition, -10.0, 10.0);
+	camera.drawUI();
 	if ( ImGui::SliderFloat("grid", &grid, 0.01, 1.0) ) {
 		reset();
 	}
@@ -128,14 +121,7 @@ void display() {
 	drawUI();
 
 	glUseProgram(*shader);
-
-	glm::mat4 model = glm::rotate(glm::mat4(1.0f), cameraRotationZ, glm::vec3(0.0f, 0.0f, 1.0f))
-	                * glm::rotate(glm::mat4(1.0f), cameraRotationX, glm::rotate(glm::vec3(1.0f, 0.0f, 0.0f), -cameraRotationZ, glm::vec3(0.0f, 0.0f, 1.0f)));
-	glm::mat4 view = glm::lookAt(cameraPosition, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
-	glm::mat4 projection = glm::perspective(45.0f, 1.0f * screenWidth / screenHeight, 0.0f, 10.0f);
-	glm::mat4 camera_transform = projection * view * model;
-
-	glUniformMatrix4fv(uniform_camera_transform, 1, GL_FALSE, glm::value_ptr(camera_transform));
+	camera.apply(screenWidth, screenHeight);
 	glUniformMatrix3fv(uniform_field_transform,  1, GL_FALSE, glm::value_ptr(field_transform));
 	glUniform1f(uniform_alpha, alpha);
 
@@ -257,7 +243,7 @@ int main(int argc, char** argv) {
 	glLinkProgram(local_shader);
 	GLint linked;
 	glGetShaderiv(local_shader, GL_LINK_STATUS, &linked);
-	uniform_camera_transform = get_uniform(local_shader, "camera_transform");
+	camera.setup(local_shader);
 	uniform_field_transform  = get_uniform(local_shader, "field_transform");
 	uniform_alpha = get_uniform(local_shader, "alpha");
 	shader = &local_shader;
