@@ -2,6 +2,7 @@
 #include <GL/freeglut.h>
 
 #include <glm/glm.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -129,9 +130,9 @@ void display() {
 	glUseProgram(*shader);
 
 	glm::mat4 model = glm::rotate(glm::mat4(1.0f), cameraRotationZ, glm::vec3(0.0f, 0.0f, 1.0f))
-	                * glm::rotate(glm::mat4(1.0f), cameraRotationX, glm::vec3(1.0f, 0.0f, 0.0f));
+	                * glm::rotate(glm::mat4(1.0f), cameraRotationX, glm::rotate(glm::vec3(1.0f, 0.0f, 0.0f), -cameraRotationZ, glm::vec3(0.0f, 0.0f, 1.0f)));
 	glm::mat4 view = glm::lookAt(cameraPosition, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
-	glm::mat4 projection = glm::perspective(45.0f, 1.0f * 640 / 480, 0.0f, 10.0f);
+	glm::mat4 projection = glm::perspective(45.0f, 1.0f * screenWidth / screenHeight, 0.0f, 10.0f);
 	glm::mat4 camera_transform = projection * view * model;
 
 	glUniformMatrix4fv(uniform_camera_transform, 1, GL_FALSE, glm::value_ptr(camera_transform));
