@@ -25,8 +25,13 @@ void Camera::processUserInput() {
 		drag_model_ = rest_model_;
 
 		glm::quat conjugate_drag_model = glm::conjugate(drag_model_);
-		drag_model_ *= glm::angleAxis(drag.y * 0.01f, conjugate_drag_model*glm::vec3(1.f,0.f,0.f));
-		drag_model_ *= glm::angleAxis(drag.x * 0.01f, conjugate_drag_model*glm::vec3(0.f,0.f,1.f));
+
+		if ( !yAxisIsLocked ) {
+			drag_model_ *= glm::angleAxis(drag.y * 0.01f, conjugate_drag_model*glm::vec3(1.f,0.f,0.f));
+		}
+		if ( !xAxisIsLocked ) {
+			drag_model_ *= glm::angleAxis(drag.x * 0.01f, conjugate_drag_model*glm::vec3(0.f,0.f,1.f));
+		}
 
 		model_ = &drag_model_;
 	} else {

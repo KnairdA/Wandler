@@ -104,6 +104,10 @@ void drawUI() {
 	if ( ImGui::Button("Reset camera") ) {
 		camera.reset();
 	}
+	ImGui::SameLine();
+	ImGui::Checkbox("Lock X", &camera.xAxisIsLocked);
+	ImGui::SameLine();
+	ImGui::Checkbox("Lock Y", &camera.yAxisIsLocked);
 	ImGui::End();
 
 	ImGui::Begin("Transformation");
