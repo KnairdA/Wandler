@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "ui.h"
+#include "util.h"
 #include "camera.h"
 
 Camera camera;
@@ -116,6 +117,8 @@ void drawUI() {
 	ImGui::Render();
 	glPopAttrib();
 	glPopMatrix();
+
+	camera.processUserInput();
 }
 
 void display() {
@@ -124,7 +127,7 @@ void display() {
 	drawUI();
 
 	glUseProgram(shader);
-	camera.apply(screenWidth, screenHeight);
+	camera.publishUniform(screenWidth, screenHeight);
 	glUniformMatrix3fv(uniform_field_transform,  1, GL_FALSE, glm::value_ptr(field_transform));
 	glUniform1f(uniform_alpha, alpha);
 
@@ -175,50 +178,6 @@ void reshape(int w, int h) {
 	glViewport(0, 0, w, h);
 }
 
-GLint compileShader(const std::string& source, GLenum type) {
-	GLint local_shader = glCreateShader(type);
-
-	if ( !local_shader ) {
-		std::cerr << "Cannot create a shader of type " << type << std::endl;
-		exit(-1);
-	}
-
-	const char* source_data = source.c_str();
-	const int source_length = source.size();
-
-	glShaderSource(local_shader, 1, &source_data, &source_length);
-	glCompileShader(local_shader);
-
-	{
-		GLint compiled;
-		glGetShaderiv(local_shader, GL_COMPILE_STATUS, &compiled);
-		if ( !compiled ) {
-			std::cerr << "Cannot compile shader" << std::endl;
-
-			GLint maxLength = 0;
-			glGetShaderiv(local_shader, GL_INFO_LOG_LENGTH, &maxLength);
-			std::vector<GLchar> errorLog(maxLength);
-			glGetShaderInfoLog(local_shader, maxLength, &maxLength, &errorLog[0]);
-			for( auto c : errorLog ) {
-				std::cerr << c;
-			}
-			std::cerr << std::endl;
-
-			exit(-1);
-		}
-	}
-
-	return local_shader;
-}
-
-GLint get_uniform(GLuint program, const char *name) {
-	GLint uniform = glGetUniformLocation(program, name);
-	if ( uniform == -1 ) {
-		std::cerr << "Could not bind uniform " << name << std::endl;
-	}
-	return uniform;
-}
-
 int main(int argc, char** argv) {
 	reset();
 
@@ -230,7 +189,7 @@ int main(int argc, char** argv) {
 	glewInit();
 
 	shader = glCreateProgram();
-	glAttachShader(shader, compileShader(
+	glAttachShader(shader, util::compileShader(
 		"uniform mat4 camera_transform;"
 		"uniform mat3 field_transform;"
 		"uniform float alpha;"
@@ -239,7 +198,7 @@ int main(int argc, char** argv) {
 			"gl_FrontColor = gl_Color;"
 		"}\n",
 		GL_VERTEX_SHADER));
-	glAttachShader(shader, compileShader(
+	glAttachShader(shader, util::compileShader(
 		"void main(void) { gl_FragColor = gl_Color; }\n",
 		GL_FRAGMENT_SHADER));
 	glLinkProgram(shader);
@@ -248,8 +207,8 @@ int main(int argc, char** argv) {
 
 	camera.setup(shader);
 
-	uniform_field_transform  = get_uniform(shader, "field_transform");
-	uniform_alpha = get_uniform(shader, "alpha");
+	uniform_field_transform  = util::getUniform(shader, "field_transform");
+	uniform_alpha = util::getUniform(shader, "alpha");
 
 	ImGui_ImplGLUT_Init();
 

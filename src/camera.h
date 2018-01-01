@@ -14,7 +14,9 @@ private:
 	glm::vec3 up_     = glm::vec3(0.0,  0.0, 1.0);
 	glm::vec3 origin_ = glm::vec3(0.0,  0.0, 0.0);
 
-	glm::quat model_;
+	glm::quat* model_;
+
+	glm::quat rest_model_;
 	glm::quat drag_model_;
 
 	GLint uniform_transform_;
@@ -23,6 +25,8 @@ public:
 	void setup(GLint shader);
 	void reset();
 
-	void apply(int screenWidth, int screenHeight);
+	void processUserInput();
+
+	void publishUniform(int screenWidth, int screenHeight);
 
 };
