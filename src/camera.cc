@@ -10,18 +10,31 @@ void Camera::setup(GLint shader) {
 	uniform_transform_ = glGetUniformLocation(shader, "camera_transform");
 }
 
-void Camera::apply(int screenWidth, int screenHeight) {
-	glm::vec3 zAxis = glm::vec3(0.0f, 0.0f, 1.0f);
-	glm::vec3 xAxis = glm::rotate(glm::vec3(1.0f, 0.0f, 0.0f), -rotation_z_, zAxis);
-	glm::mat4 model = glm::rotate(glm::mat4(1.0f), rotation_z_, zAxis)
-					* glm::rotate(glm::mat4(1.0f), rotation_x_, xAxis);
-	glm::mat4 view  = glm::lookAt(position_, origin_, up_);
-	glm::mat4 projection = glm::perspective(45.0f, 1.0f * screenWidth / screenHeight, 0.0f, 10.0f);
-
-	glUniformMatrix4fv(uniform_transform_, 1, GL_FALSE, glm::value_ptr(projection * view * model));
+void Camera::reset() {
+	model_ = glm::quat();
+	drag_model_ = glm::quat();
 }
 
-void Camera::drawUI() {
-	ImGui::SliderFloat("rotationZ", &rotation_z_, -M_PI, M_PI);
-	ImGui::SliderFloat("rotationX", &rotation_x_, -M_PI, M_PI);
+void Camera::apply(int screenWidth, int screenHeight) {
+	glm::mat4 view = glm::lookAt(glm::vec3(0.f,-distance_,0.f), origin_, up_);
+	glm::mat4 projection = glm::perspective(45.0f, 1.0f * screenWidth / screenHeight, 0.0f, 1.0f);
+	glm::mat4 model;
+
+	if ( ImGui::IsMouseDragging() && !ImGui::GetIO().WantCaptureMouse ) {
+		ImVec2 drag = ImGui::GetMouseDragDelta();
+		drag_model_ = model_;
+		glm::quat conjugate_drag_model = glm::conjugate(drag_model_);
+		drag_model_ *= glm::angleAxis(drag.y * 0.01f, conjugate_drag_model*glm::vec3(1.f,0.f,0.f));
+		drag_model_ *= glm::angleAxis(drag.x * 0.01f, conjugate_drag_model*glm::vec3(0.f,0.f,1.f));
+
+		model = glm::toMat4(drag_model_);
+	} else {
+		if ( model_ != drag_model_ ) {
+			model_ = drag_model_;
+		}
+
+		model = glm::toMat4(model_);
+	}
+
+	glUniformMatrix4fv(uniform_transform_, 1, GL_FALSE, glm::value_ptr(projection * view * model));
 }
