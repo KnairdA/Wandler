@@ -98,6 +98,10 @@ void drawUI() {
 	ImGui::Begin("View");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::Spacing();
+	if ( ImGui::SliderInt("Grid extend", &extend, 1, 20) ) {
+		reset();
+	}
+	ImGui::Spacing();
 	ImGui::Checkbox("X plane", &drawXPlane);
 	ImGui::SameLine();
 	ImGui::Checkbox("Y plane", &drawYPlane);
@@ -113,6 +117,8 @@ void drawUI() {
 	ImGui::Checkbox("Lock X", &camera.xAxisIsLocked);
 	ImGui::SameLine();
 	ImGui::Checkbox("Lock Z", &camera.zAxisIsLocked);
+	ImGui::Spacing();
+	ImGui::SliderFloat("Distance", &camera.distance, 0.1f, 20.f);
 	ImGui::End();
 
 	ImGui::Begin("Transformation");

@@ -43,7 +43,7 @@ void Camera::processUserInput() {
 }
 
 void Camera::publishUniform(int screenWidth, int screenHeight) {
-	glm::mat4 view       = glm::lookAt(glm::vec3(0.f,-distance_,0.f), origin_, up_);
+	glm::mat4 view       = glm::lookAt(glm::vec3(0.f,-distance,0.f), origin_, up_);
 	glm::mat4 projection = glm::perspective(45.0f, 1.0f * screenWidth / screenHeight, 0.0f, 1.0f);
 	glm::mat4 model      = glm::toMat4(*model_);
 
