@@ -38,50 +38,49 @@ GLint uniform_field_transform;
 GLint uniform_alpha;
 GLint shader;
 
-int extend = 10;
+int extend = 5;
 
 void reset() {
 	vertices.clear();
-	vertices.reserve(18*(2*extend)*(2*extend));
+	vertices.reserve(18*(2*extend+1)*(2*extend+1));
 
 	int idxZ = 0;
-	int idxX = 2*(2*extend)*(2*extend);
-	int idxY = 4*(2*extend)*(2*extend);
+	int idxX = 2*(2*extend+1)*(2*extend+1);
+	int idxY = 4*(2*extend+1)*(2*extend+1);
 
-	for ( int i = 0; i < 18*(2*extend)*(2*extend); ++i ) {
+	for ( int i = 0; i < 20*(2*extend+1)*(2*extend+1); ++i ) {
 		vertices.emplace_back();
 	}
 
-	for ( int i = -extend; i < extend; i += 1 ) {
-		for ( int j = -extend; j < extend; j += 1 ) {
+	for ( int i = -extend; i <= extend; ++i ) {
+		for ( int j = -extend; j <= extend; ++j ) {
 			vertices[3*idxZ+0] = i*grid;
-			vertices[3*idxZ+1] = i % 2 == 0 ? j*grid : (-j-1)*grid;
+			vertices[3*idxZ+1] = i % 2 == 0 ? j*grid : (-j)*grid;
 			vertices[3*idxZ+2] = 0.0;
 
 			vertices[3*idxX+0] = 0.0;
 			vertices[3*idxX+1] = i*grid;
-			vertices[3*idxX+2] = i % 2 == 0 ? j*grid : (-j-1)*grid;
+			vertices[3*idxX+2] = i % 2 == 0 ? j*grid : (-j)*grid;
 
 			vertices[3*idxY+0] = i*grid;
 			vertices[3*idxY+1] = 0.0;
-			vertices[3*idxY+2] = i % 2 == 0 ? j*grid : (-j-1)*grid;
-
+			vertices[3*idxY+2] = i % 2 == 0 ? j*grid : (-j)*grid;
 
 			idxZ++; idxY++; idxX++;
 		}
 	}
 
-	for ( int j = -extend; j < extend; j += 1 ) {
-		for ( int i = -extend; i < extend; i += 1 ) {
-			vertices[3*idxZ+0] = j % 2 == 0 ? (-i-1)*grid : i*grid;
+	for ( int j = -extend; j <= extend; ++j ) {
+		for ( int i = -extend; i <= extend; ++i ) {
+			vertices[3*idxZ+0] = j % 2 == 0 ? (-i)*grid : i*grid;
 			vertices[3*idxZ+1] = j*grid;
 			vertices[3*idxZ+2] = 0.0;
 
 			vertices[3*idxX+0] = 0.0;
-			vertices[3*idxX+1] = j % 2 == 0 ? (-i-1)*grid : i*grid;
+			vertices[3*idxX+1] = j % 2 == 0 ? (-i)*grid : i*grid;
 			vertices[3*idxX+2] = j*grid;
 
-			vertices[3*idxY+0] = j % 2 == 0 ? (-i-1)*grid : i*grid;
+			vertices[3*idxY+0] = j % 2 == 0 ? (-i)*grid : i*grid;
 			vertices[3*idxY+1] = 0.0;
 			vertices[3*idxY+2] = j*grid;
 
@@ -151,15 +150,15 @@ void display() {
 	glEnable(GL_LINE_SMOOTH);
 	if ( drawZPlane ) {
 		glColor3f(1.0,0.0,0.0);
-		glDrawArrays(GL_LINE_STRIP, 0,                         2*(2*extend)*(2*extend)-0);
+		glDrawArrays(GL_LINE_STRIP, 0,                             2*(2*extend+1)*(2*extend+1)-0);
 	}
 	if ( drawXPlane ) {
 		glColor3f(0.0,1.0,0.0);
-		glDrawArrays(GL_LINE_STRIP, 2*(2*extend)*(2*extend)+1, 2*(2*extend)*(2*extend)-1);
+		glDrawArrays(GL_LINE_STRIP, 2*(2*extend+1)*(2*extend+1)+1, 2*(2*extend+1)*(2*extend+1)-1);
 	}
 	if ( drawYPlane ) {
 		glColor3f(0.0,0.0,1.0);
-		glDrawArrays(GL_LINE_STRIP, 4*(2*extend)*(2*extend)+1, 2*(2*extend)*(2*extend)-1);
+		glDrawArrays(GL_LINE_STRIP, 4*(2*extend+1)*(2*extend+1)+1, 2*(2*extend+1)*(2*extend+1)-1);
 	}
 	glDeleteBuffers(1, &vertex_buffer);
 	glDisableVertexAttribArray(0);
