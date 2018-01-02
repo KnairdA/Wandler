@@ -30,6 +30,6 @@ public:
 	void publishUniform(int screenWidth, int screenHeight);
 
 	bool xAxisIsLocked = false;
-	bool yAxisIsLocked = false;
+	bool zAxisIsLocked = false;
 
 };
