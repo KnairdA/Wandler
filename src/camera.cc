@@ -8,6 +8,8 @@
 
 #include "util.h"
 
+namespace ui {
+
 void Camera::setup(GLint shader) {
 	uniform_transform_ = util::getUniform(shader, "camera_transform");
 	model_ = &rest_model_;
@@ -48,4 +50,6 @@ void Camera::publishUniform(int screenWidth, int screenHeight) {
 	glm::mat4 model      = glm::toMat4(*model_);
 
 	glUniformMatrix4fv(uniform_transform_, 1, GL_FALSE, glm::value_ptr(projection * view * model));
+}
+
 }

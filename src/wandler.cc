@@ -17,17 +17,17 @@
 
 namespace {
 
-Camera camera;
+GLint uniform_field_transform;
+GLint uniform_alpha;
+GLint shader;
 
-bool drawXPlane = true;
-bool drawYPlane = true;
-bool drawZPlane = true;
-bool drawAxis   = true;
-
-const float grid = 0.2;
+ui::Camera camera;
 
 std::vector<GLfloat> vertices;
 GLuint vertex_buffer;
+
+const float grid = 0.2;
+int extend = 5;
 
 glm::mat3 field_transform = glm::mat3(
 	1.0, 0.0, 0.0,
@@ -36,11 +36,10 @@ glm::mat3 field_transform = glm::mat3(
 );
 float alpha = 1.0;
 
-GLint uniform_field_transform;
-GLint uniform_alpha;
-GLint shader;
-
-int extend = 5;
+bool drawXPlane = true;
+bool drawYPlane = true;
+bool drawZPlane = true;
+bool drawAxis   = true;
 
 }
 
@@ -87,6 +86,35 @@ void constructGrid() {
 			idxZ++; idxY++; idxX++;
 		}
 	}
+}
+
+void setupShader() {
+	#define GLSL(shader) #shader
+	shader = glCreateProgram();
+
+	glAttachShader(shader, util::compileShader(GLSL(
+		uniform mat4 camera_transform;
+		uniform mat3 field_transform;
+		uniform float alpha;
+		void main(void) {
+			mat3 partial_field_transformation = (mat3(1.0) + alpha * (field_transform - mat3(1.0)));
+			vec3 vertex = vec3(gl_Vertex.x, gl_Vertex.y, gl_Vertex.z);
+			gl_Position = camera_transform
+			            * vec4(partial_field_transformation * vertex, 1.0);
+			gl_FrontColor = gl_Color;
+		}),
+		GL_VERTEX_SHADER));
+	glAttachShader(shader, util::compileShader(GLSL(
+		void main(void) {
+			gl_FragColor = gl_Color;
+		}),
+		GL_FRAGMENT_SHADER));
+
+	glLinkProgram(shader);
+	camera.setup(shader);
+
+	uniform_field_transform  = util::getUniform(shader, "field_transform");
+	uniform_alpha            = util::getUniform(shader, "alpha");
 }
 
 void drawUI() {
@@ -136,10 +164,9 @@ void drawUI() {
 	camera.processUserInput();
 }
 
-void display() {
-	glClear(GL_COLOR_BUFFER_BIT);
-
+void drawGrid() {
 	glUseProgram(shader);
+
 	camera.publishUniform(ui::getScreenWidth(), ui::getScreenHeight());
 	glUniformMatrix3fv(uniform_field_transform,  1, GL_FALSE, glm::value_ptr(field_transform));
 	glUniform1f(uniform_alpha, alpha);
@@ -149,8 +176,10 @@ void display() {
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
 	glLineWidth(1.0);
 	glEnable(GL_LINE_SMOOTH);
+
 	if ( drawZPlane ) {
 		glColor3f(1.0,0.0,0.0);
 		glDrawArrays(GL_LINE_STRIP, 0,                             2*(2*extend+1)*(2*extend+1)-0);
@@ -163,6 +192,7 @@ void display() {
 		glColor3f(0.0,0.0,1.0);
 		glDrawArrays(GL_LINE_STRIP, 4*(2*extend+1)*(2*extend+1)+1, 2*(2*extend+1)*(2*extend+1)-1);
 	}
+
 	glDeleteBuffers(1, &vertex_buffer);
 	glDisableVertexAttribArray(0);
 
@@ -180,7 +210,12 @@ void display() {
 	}
 
 	glUseProgram(0);
+}
 
+void display() {
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	drawGrid();
 	drawUI();
 
 	glutSwapBuffers();
@@ -197,30 +232,7 @@ int main(int argc, char** argv) {
 	glutCreateWindow("Wandler");
 	glewInit();
 
-	shader = glCreateProgram();
-	glAttachShader(shader, util::compileShader(
-		"uniform mat4 camera_transform;"
-		"uniform mat3 field_transform;"
-		"uniform float alpha;"
-		"void main(void) {"
-			"mat3 partial_field_transformation = (mat3(1.0) + alpha * (field_transform - mat3(1.0)));"
-			"vec3 vertex = vec3(gl_Vertex.x, gl_Vertex.y, gl_Vertex.z);"
-			"gl_Position = camera_transform"
-			"            * vec4(partial_field_transformation * vertex, 1.0);"
-			"gl_FrontColor = gl_Color;"
-		"}\n",
-		GL_VERTEX_SHADER));
-	glAttachShader(shader, util::compileShader(
-		"void main(void) { gl_FragColor = gl_Color; }\n",
-		GL_FRAGMENT_SHADER));
-	glLinkProgram(shader);
-	GLint linked;
-	glGetShaderiv(shader, GL_LINK_STATUS, &linked);
-
-	camera.setup(shader);
-
-	uniform_field_transform  = util::getUniform(shader, "field_transform");
-	uniform_alpha            = util::getUniform(shader, "alpha");
+	setupShader();
 
 	ImGui_ImplGLUT_Init();
 

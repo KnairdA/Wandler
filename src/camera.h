@@ -5,13 +5,15 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+namespace ui {
+
 class Camera {
 private:
 	float rotation_z_ = 0.0;
 	float rotation_x_ = 0.0;
 
-	glm::vec3 up_     = glm::vec3(0.0,  0.0, 1.0);
-	glm::vec3 origin_ = glm::vec3(0.0,  0.0, 0.0);
+	glm::vec3 up_     = glm::vec3(0.0, 0.0, 1.0);
+	glm::vec3 origin_ = glm::vec3(0.0, 0.0, 0.0);
 
 	glm::quat* model_;
 
@@ -33,3 +35,5 @@ public:
 	void publishUniform(int screenWidth, int screenHeight);
 
 };
+
+}
