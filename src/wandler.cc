@@ -140,8 +140,6 @@ void drawUI() {
 void display() {
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	drawUI();
-
 	glUseProgram(shader);
 	camera.publishUniform(ui::getScreenWidth(), ui::getScreenHeight());
 	glUniformMatrix3fv(uniform_field_transform,  1, GL_FALSE, glm::value_ptr(field_transform));
@@ -184,6 +182,8 @@ void display() {
 
 	glUseProgram(0);
 
+	drawUI();
+
 	glutSwapBuffers();
 	glutPostRedisplay();
 }
@@ -224,6 +224,7 @@ int main(int argc, char** argv) {
 	uniform_alpha = util::getUniform(shader, "alpha");
 
 	ImGui_ImplGLUT_Init();
+	ImGui::StyleColorsDark();
 
 	ui::installCallbacks();
 
