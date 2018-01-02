@@ -24,7 +24,7 @@ bool drawAxis   = true;
 
 const float grid = 0.2;
 
-GLfloat vertices[18*20*20];
+std::vector<GLfloat> vertices;
 GLuint vertex_buffer;
 
 glm::mat3 field_transform = glm::mat3(
@@ -38,13 +38,22 @@ GLint uniform_field_transform;
 GLint uniform_alpha;
 GLint shader;
 
-void reset() {
-	int idxZ = 0;
-	int idxX = 2*20*20;
-	int idxY = 4*20*20;
+int extend = 10;
 
-	for ( int i = -10; i < 10; i += 1 ) {
-		for ( int j = -10; j < 10; j += 1 ) {
+void reset() {
+	vertices.clear();
+	vertices.reserve(18*(2*extend)*(2*extend));
+
+	int idxZ = 0;
+	int idxX = 2*(2*extend)*(2*extend);
+	int idxY = 4*(2*extend)*(2*extend);
+
+	for ( int i = 0; i < 18*(2*extend)*(2*extend); ++i ) {
+		vertices.emplace_back();
+	}
+
+	for ( int i = -extend; i < extend; i += 1 ) {
+		for ( int j = -extend; j < extend; j += 1 ) {
 			vertices[3*idxZ+0] = i*grid;
 			vertices[3*idxZ+1] = i % 2 == 0 ? j*grid : (-j-1)*grid;
 			vertices[3*idxZ+2] = 0.0;
@@ -62,8 +71,8 @@ void reset() {
 		}
 	}
 
-	for ( int j = -10; j < 10; j += 1 ) {
-		for ( int i = -10; i < 10; i += 1 ) {
+	for ( int j = -extend; j < extend; j += 1 ) {
+		for ( int i = -extend; i < extend; i += 1 ) {
 			vertices[3*idxZ+0] = j % 2 == 0 ? (-i-1)*grid : i*grid;
 			vertices[3*idxZ+1] = j*grid;
 			vertices[3*idxZ+2] = 0.0;
@@ -135,22 +144,22 @@ void display() {
 
 	glGenBuffers(1, &vertex_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 	glLineWidth(1.0);
 	glEnable(GL_LINE_SMOOTH);
 	if ( drawZPlane ) {
 		glColor3f(1.0,0.0,0.0);
-		glDrawArrays(GL_LINE_STRIP, 0,         2*20*20);
+		glDrawArrays(GL_LINE_STRIP, 0,                         2*(2*extend)*(2*extend)-0);
 	}
 	if ( drawXPlane ) {
 		glColor3f(0.0,1.0,0.0);
-		glDrawArrays(GL_LINE_STRIP, 2*20*20+1, 2*20*20-1);
+		glDrawArrays(GL_LINE_STRIP, 2*(2*extend)*(2*extend)+1, 2*(2*extend)*(2*extend)-1);
 	}
 	if ( drawYPlane ) {
 		glColor3f(0.0,0.0,1.0);
-		glDrawArrays(GL_LINE_STRIP, 4*20*20+1, 2*20*20-1);
+		glDrawArrays(GL_LINE_STRIP, 4*(2*extend)*(2*extend)+1, 2*(2*extend)*(2*extend)-1);
 	}
 	glDeleteBuffers(1, &vertex_buffer);
 	glDisableVertexAttribArray(0);
@@ -160,11 +169,11 @@ void display() {
 		glColor3f(1.0,1.0,1.0);
 		glBegin(GL_LINES);
 		glVertex3f(0.0,0.0,0.0);
-		glVertex3f(10*grid,0.0,0.0);
+		glVertex3f(extend*grid,0.0,0.0);
 		glVertex3f(0.0,0.0,0.0);
-		glVertex3f(0.0,10*grid,0.0);
+		glVertex3f(0.0,extend*grid,0.0);
 		glVertex3f(0.0,0.0,0.0);
-		glVertex3f(0.0,0.0,10*grid);
+		glVertex3f(0.0,0.0,extend*grid);
 		glEnd();
 	}
 
