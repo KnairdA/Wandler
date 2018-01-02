@@ -15,6 +15,8 @@
 #include "util.h"
 #include "camera.h"
 
+namespace {
+
 Camera camera;
 
 bool drawXPlane = true;
@@ -40,17 +42,15 @@ GLint shader;
 
 int extend = 5;
 
-void reset() {
+}
+
+void constructGrid() {
 	vertices.clear();
-	vertices.reserve(18*(2*extend+1)*(2*extend+1));
+	vertices.resize(18*(2*extend+1)*(2*extend+1));
 
 	int idxZ = 0;
 	int idxX = 2*(2*extend+1)*(2*extend+1);
 	int idxY = 4*(2*extend+1)*(2*extend+1);
-
-	for ( int i = 0; i < 20*(2*extend+1)*(2*extend+1); ++i ) {
-		vertices.emplace_back();
-	}
 
 	for ( int i = -extend; i <= extend; ++i ) {
 		for ( int j = -extend; j <= extend; ++j ) {
@@ -99,7 +99,7 @@ void drawUI() {
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::Spacing();
 	if ( ImGui::SliderInt("Grid extend", &extend, 1, 20) ) {
-		reset();
+		constructGrid();
 	}
 	ImGui::Spacing();
 	ImGui::Checkbox("X plane", &drawXPlane);
@@ -122,9 +122,8 @@ void drawUI() {
 	ImGui::End();
 
 	ImGui::Begin("Transformation");
-	ImGui::DragFloat3("row1", (float*)&(field_transform[0]), 0.1f, -2.0f, 2.0f);
-	ImGui::DragFloat3("row2", (float*)&(field_transform[1]), 0.1f, -2.0f, 2.0f);
-	ImGui::DragFloat3("row3", (float*)&(field_transform[2]), 0.1f, -2.0f, 2.0f);
+	ui::FloatMatrixDrag3x3(&field_transform, "transformation");
+	ImGui::Spacing();
 	ImGui::Text("Determinant: %.3f", glm::determinant(field_transform));
 	ImGui::Spacing();
 	ImGui::SliderFloat("alpha", &alpha, 0.0, 1.0);
@@ -189,7 +188,7 @@ void display() {
 }
 
 int main(int argc, char** argv) {
-	reset();
+	constructGrid();
 
 	glutInit(&argc, argv);
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
@@ -221,15 +220,14 @@ int main(int argc, char** argv) {
 	camera.setup(shader);
 
 	uniform_field_transform  = util::getUniform(shader, "field_transform");
-	uniform_alpha = util::getUniform(shader, "alpha");
+	uniform_alpha            = util::getUniform(shader, "alpha");
 
 	ImGui_ImplGLUT_Init();
-	ImGui::StyleColorsDark();
 
+	ImGui::StyleColorsDark();
 	ui::installCallbacks();
 
 	glutDisplayFunc(display);
-
 	glutMainLoop();
 
 	ImGui_ImplGLUT_Shutdown();

@@ -4,6 +4,7 @@
 #include <GL/freeglut.h>
 
 #include "dep/imgui/imgui.h"
+#include "dep/imgui/imgui_internal.h"
 
 namespace {
 
@@ -100,6 +101,30 @@ unsigned int getScreenWidth() {
 
 unsigned int getScreenHeight() {
 	return screenHeight;
+}
+
+bool FloatMatrixDrag3x3(glm::mat3* const matrix, const std::string& name) {
+	bool changed = false;
+
+	ImGui::BeginGroup();
+	ImGui::PushID(name.c_str());
+    for ( int i = 0; i < 3; i++ ) {
+		ImGui::PushMultiItemsWidths(3);
+		ImGui::PushID(i);
+		for ( int j = 0; j < 3; j++ ) {
+			ImGui::PushID(j);
+			changed |= ImGui::DragFloat("##v", &(*matrix)[j][i], 0.1f, -2.f, 2.f);
+			ImGui::SameLine();
+			ImGui::PopItemWidth();
+			ImGui::PopID();
+		}
+		ImGui::PopID();
+		ImGui::NewLine();
+    }
+	ImGui::PopID();
+	ImGui::EndGroup();
+
+	return changed;
 }
 
 }
