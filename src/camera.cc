@@ -21,6 +21,16 @@ void Camera::reset() {
 }
 
 void Camera::processUserInput() {
+	if ( !ImGui::IsAnyWindowHovered() ) {
+		if ( ImGui::GetIO().MouseWheel < 0 ) {
+			distance += 0.1;
+		} else if ( ImGui::GetIO().MouseWheel > 0 ) {
+			if ( distance >= 0.2) {
+				distance -= 0.1;
+			}
+		}
+	}
+
 	if ( ImGui::IsMouseDragging() && !ImGui::GetIO().WantCaptureMouse ) {
 		ImVec2 drag = ImGui::GetMouseDragDelta();
 

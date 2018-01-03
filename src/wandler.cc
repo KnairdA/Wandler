@@ -122,6 +122,8 @@ void drawUI() {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	ImGui_ImplGLUT_NewFrame(ui::getScreenWidth(), ui::getScreenHeight());
 
+	camera.processUserInput();
+
 	ImGui::SetNextWindowSize(ImVec2(400, 200), ImGuiSetCond_FirstUseEver);
 	ImGui::Begin("View");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -160,8 +162,6 @@ void drawUI() {
 	ImGui::Render();
 	glPopAttrib();
 	glPopMatrix();
-
-	camera.processUserInput();
 }
 
 void drawGrid() {
