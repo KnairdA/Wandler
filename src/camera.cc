@@ -42,7 +42,7 @@ void Camera::processUserInput() {
 			drag_model_ *= glm::angleAxis(drag.y * 0.01f, conjugate_drag_model*glm::vec3(1.f,0.f,0.f));
 		}
 		if ( !zAxisIsLocked ) {
-			drag_model_ *= glm::angleAxis(drag.x * 0.01f, conjugate_drag_model*glm::vec3(0.f,0.f,1.f));
+			drag_model_ *= glm::angleAxis(drag.x * 0.01f, glm::vec3(0.f,0.f,1.f));
 		}
 
 		model_ = &drag_model_;
